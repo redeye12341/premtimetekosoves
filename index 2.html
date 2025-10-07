@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="sq">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Demo: Harta e Premtimeve (Kosovë)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<style>
+:root{--bg:#f6f7fb;--card:#ffffff;--accent:#6b8ff0;--muted:#6b7280;}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;}
+.app{display:grid;grid-template-columns:360px 1fr;gap:24px;height:100vh;padding:24px;background:linear-gradient(180deg,#f6f7fb,#eef2ff);box-sizing:border-box;}
+.panel{background:var(--card);border-radius:12px;padding:20px;box-shadow:0 6px 18px rgba(30,41,59,0.06);overflow:auto}
+h1{margin:0;font-size:20px;color:#0f172a}
+p.lead{color:var(--muted);margin-top:6px;margin-bottom:16px;font-size:13px}
+#map{height:calc(100vh - 96px);border-radius:12px;box-shadow:0 8px 24px rgba(15,23,42,0.06);}
+.controls{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+select,button{padding:10px 12px;border-radius:10px;border:1px solid #e6e9f2;background:white;font-size:14px}
+.legend{display:flex;gap:8px;align-items:center;margin-top:8px;font-size:13px;color:var(--muted)}
+.legend .dot{width:14px;height:14px;border-radius:50%;display:inline-block}
+.meta{font-size:12px;color:var(--muted);margin-top:8px}
+.small{font-size:12px;color:var(--muted)}
+footer{margin-top:16px;font-size:12px;color:var(--muted)}
+.brand{display:flex;gap:10px;align-items:center}
+.brand .logo{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#6b8ff0,#8ec3ff);display:flex;align-items:center;justify-content:center;color:white;font-weight:700}
+a.link{color:var(--accent);text-decoration:none;font-weight:600}
+@media(max-width:900px){.app{grid-template-columns:1fr;grid-template-rows:auto 1fr;padding:12px}#map{height:60vh}.panel{order:2}}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="panel">
+<div class="brand"><div class="logo">KP</div><div><h1>Demo: Kosovo Promises Map</h1><div class="small">Harta demo me 3 komuna — Prishtinë, Prizren, Dragash</div></div></div>
+<p class="lead">Kliko një komunë në hartë. Harta do bëjë zoom dhe do shfaqet dropdown me kryetarët (emra real). Kur të zgjidhni kryetarin, premimet e tij shfaqen në hartë me ikona dhe ngjyra.</p>
+<div class="controls">
+<label class="small">Komuna e zgjedhur: <b id="selectedCity">-</b></label>
+<select id="mayorSelect" style="display:none"></select>
+<div class="legend">
+<div class="dot" style="background:#34d399"></div><div> E përmbushur</div>
+<div style="width:14px"></div>
+<div class="dot" style="background:#f59e0b"></div><div> Në proces</div>
+<div style="width:14px"></div>
+<div class="dot" style="background:#ef4444"></div><div> Nuk është nisur</div>
+</div>
+<div class="meta">Kryetarët e përfshirë në demo (emra real):<br>- Përparim Rama (Prishtinë) — mandat 2021–2025<br>- Shaqir Totaj (Prizren) — mandat 2021–2025<br>- Bexhet Xheladini (Dragash) — mandat 2021–2025</div>
+<footer>Ky është një <i>demo</i>. Të dhënat e premtimeve në demo janë shembullore — por emrat e kryetarëve janë të vërtetë. Fotot janë ilustruese.</footer>
+</div>
+<div id="map" class="panel"></div>
+</div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+const map=L.map('map',{minZoom:6}).setView([42.6,20.9],8);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:''}).addTo(map);
+const cities={Prishtine:{center:[42.6629,21.1655],poly:[[42.700,21.120],[42.700,21.200],[42.640,21.220],[42.640,21.120]],mayors:[{name:"Përparim Rama",years:"2021–2025"}]},Prizren:{center:[42.2150,20.7436],poly:[[42.255,20.690],[42.255,20.800],[42.185,20.820],[42.185,20.690]],mayors:[{name:"Shaqir Totaj",years:"2021–2025"}]},Dragash:{center:[42.176,20.614],poly:[[42.215,20.540],[42.215,20.690],[42.140,20.720],[42.140,20.540]],mayors:[{name:"Bexhet Xheladini",years:"2021–2025"}]}};
+const cityLayers={};
+Object.keys(cities).forEach(key=>{const cfg=cities[key];const poly=L.polygon(cfg.poly,{color:'#334155',weight:1.5,fillColor:'#ffffff',fillOpacity:0.6}).addTo(map);poly.on('click',()=>onCityClick(key,poly));poly.bindTooltip(key,{permanent:false,sticky:true,offset:[0,-8]});cityLayers[key]=poly;});
+const promisesDB={Prishtine:{"Përparim Rama":[{id:1,title:"Qendër e re shëndetësore në Dardani",desc:"Ndërtim qendërshëndetësore përfshirë ambulancë dhe shërbime bazë.",lat:42.660,lon:21.150,status:"completed",category:"health",img:"https://images.unsplash.com/photo-1584036561566-baf8f5f1b144?auto=format&fit=crop&w=800&q=60"},{id:2,title:"Rikonstruksion rruga X",desc:"Rikonstruktim i rrugës kryesore lokale.",lat:42.670,lon:21.180,status:"in-progress",category:"infrastructure",img:"https://images.unsplash.com/photo-1505842465776-3d2f7e2b9e06?auto=format&fit=crop&w=800&q=60"}]},Prizren:{"Shaqir Totaj":[{id:3,title:"Park i ri në qendër",desc:"Zgjatja e hapësirave publike dhe investim në park.",lat:42.220,lon:20.750,status:"completed",category:"environment",img:"https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=60"},{id:4,title:"Rehabilitim i shkollës së mesme",desc:"Investim në infrastrukturën e shkollës lokale.",lat:42.210,lon:20.740,status:"not-started",category:"education",img:"https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?auto=format&fit=crop&w=800&q=60"}]},Dragash:{"Bexhet Xheladini":[{id:5,title:"Qendër shëndetësore mobile",desc:"Shërbime mjekësore mobile për fshatrat rreth e rrotull.",lat:42.185,lon:20.610,status:"in-progress",category:"health",img:"https://images.unsplash.com/photo-1589758438368-9a6b2b3a8c8b?auto=format&fit=crop&w=800&q=60"},{id:6,title:"Rrugë lidhëse fshati",desc:"Ndërtim rrugë lidhëse për qasje më të mirë.",lat:42.170,lon:20.620,status:"not-started",category:"infrastructure",img:"https://images.unsplash.com/photo-1508873699372-7ae1be6a2b3b?auto=format&fit=crop&w=800&q=60"}]}};
+let markersGroup=L.layerGroup().addTo(map);
+function makeIcon(status){const color=status==="completed"? "#34d399":status==="in-progress"? "#f59e0b":"#ef4444";const svg=encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='40' height='40'><circle cx='20' cy='20' r='12' fill='${color}' stroke='#fff' stroke-width='3'/></svg>`);return L.icon({iconUrl:"data:image/svg+xml;utf8,"+svg,iconSize:[32,32],iconAnchor:[16,32]});}
+function onCityClick(city,layer){document.getElementById('selectedCity').textContent=city;map.fitBounds(layer.getBounds(),{maxZoom:13,padding:[40,40]});const select=document.getElementById('mayorSelect');select.style.display='block';select.innerHTML='';const mayors=cities[city].mayors;mayors.forEach(m=>{const opt=document.createElement('option');opt.value=m.name;opt.textContent=`${m.name} (${m.years})`;select.appendChild(opt);});select.onchange=()=>showPromises(city,select.value);if(mayors.length){select.value=mayors[0].name;showPromises(city,mayors[0].name);}}
+function showPromises(city,mayor){markersGroup.clearLayers();const list=(promisesDB[city]&&promisesDB[city][mayor])||[];list.forEach(p=>{const icon=makeIcon(p.status);const m=L.marker([p.lat,p.lon],{icon}).addTo(markersGroup);const statusLabel=p.status==="completed"?"E përmbushur":p.status==="in-progress"?"Në proces":"Nuk është nisur";const html=`<div style="max-width:260px;font-family:Inter,Arial;"><h3 style="margin:0 0 6px 0;font-size:15px">${p.title}</h3><div style="font-size:13px;color:#475569;margin-bottom:8px">${p.desc}</div><img src="${p.img}" style="width:100%;border-radius:8px;margin-bottom:8px"/><div style="font-size:12px;color:#6b7280"><strong>Kategori:</strong> ${p.category} • <strong>Status:</strong> ${statusLabel}</div></div>`;m.bindPopup(html,{minWidth:260});});if(list.length===0){L.popup().setLatLng(cities[city].center).setContent('<b>Nuk u gjetën premtime demo për këtë kryetar.</b>').openOn(map);}}
+map.on('click',()=>{map.setView([42.6,20.9],8);document.getElementById('selectedCity').textContent='-';document.getElementById('mayorSelect').style.display='none';markersGroup.clearLayers();});
+</script>
+</body>
+</html>
